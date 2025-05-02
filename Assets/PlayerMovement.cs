@@ -51,7 +51,12 @@ public class PlayerMovement : MonoBehaviour
 
     ReplayManager replayInstance;
 
+    PlayerLook playerLook;
+    Transform cam;
+
     string objectId;
+
+    string camId;
 
 
 
@@ -65,6 +70,13 @@ public class PlayerMovement : MonoBehaviour
         rb.freezeRotation = true;
         replayInstance = ReplayManager.Instance;
         objectId = GetComponent<ObjectId>().GetId();
+        playerLook = GetComponent<PlayerLook>();
+        if(playerLook.cam)
+        {
+            cam = playerLook.cam;
+            camId = cam.GetComponent<ObjectId>().GetId();
+        }
+
     }
 
     //public override void OnNetworkSpawn()
@@ -82,7 +94,7 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if(ReplayManager.Instance.isWatchingReplay) return;
 
         magnitude = rb.linearVelocity.magnitude;
 
@@ -228,6 +240,12 @@ public class PlayerMovement : MonoBehaviour
         MovePlayer();
         MovementAction action = new(replayInstance.GetReplayTime(), rb.position, objectId);
         replayInstance.actions.Add(action);
+
+    }
+
+    void LateUpdate()
+    {
+
     }
 
     void MovePlayer()

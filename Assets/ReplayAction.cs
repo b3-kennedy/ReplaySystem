@@ -45,6 +45,7 @@ public class JsonQuaternion
 [System.Serializable]
 public abstract class ReplayAction
 {
+    public string objectId;
     public string type;
     public float timeStamp;
 
@@ -65,12 +66,11 @@ public abstract class ReplayAction
 [System.Serializable]
 public class MovementAction : ReplayAction
 {
-    public string objectName;
     public JsonVector targetPosition;
 
-    public MovementAction(float timeStamp, Vector3 targetPos, string oName) : base(timeStamp)
+    public MovementAction(float timeStamp, Vector3 targetPos, string oId) : base(timeStamp)
     {
-        objectName = oName;
+        objectId = oId;
         targetPosition = new(targetPos);
         type = GetActionType();
     }
@@ -79,22 +79,20 @@ public class MovementAction : ReplayAction
 
     public override void Process()
     {
-        Debug.Log(objectName);
-        if(ReplayManager.Instance.objects.TryGetValue(objectName, out var o))
+        if(ReplayManager.Instance.objects.TryGetValue(objectId, out var o))
         {
-            o.GetComponent<Rigidbody>().MovePosition(targetPosition.ToVector3());
+            o.transform.position = targetPosition.ToVector3();
         }
     }
 }
 
 public class RotationAction: ReplayAction
 {
-    public string objectName;
     public JsonQuaternion targetRotation;
 
-    public RotationAction(float timeStamp, Quaternion targetRot, string oName) : base(timeStamp)
+    public RotationAction(float timeStamp, Quaternion targetRot, string oId) : base(timeStamp)
     {
-        objectName = oName;
+        objectId = oId;
         targetRotation = new(targetRot);
         type = GetActionType();
     }
@@ -103,8 +101,7 @@ public class RotationAction: ReplayAction
 
     public override void Process()
     {
-        Debug.Log(objectName);
-        if(ReplayManager.Instance.objects.TryGetValue(objectName, out var o))
+        if(ReplayManager.Instance.objects.TryGetValue(objectId, out var o))
         {
             o.transform.rotation = targetRotation.ToQuaternion();
         }
@@ -126,9 +123,10 @@ public class ClickAction: ReplayAction
 
 public class SpawnAction: ReplayAction
 {
-    public string objectId;
     public string prefabName;
     public string objectName;
+
+
     public SpawnAction(float timeStamp, string oName, string id):base(timeStamp)
     {
         objectId = id;
@@ -142,7 +140,27 @@ public class SpawnAction: ReplayAction
         prefabName = split[0];
         GameObject o = Resources.Load<GameObject>(prefabName);
         GameObject spawnedObject = PlayerSpawner.Instance.SpawnObject(o, objectId);
+        Debug.Log(spawnedObject.name);
         ReplayManager.Instance.objects.Add(objectId, spawnedObject);
+
+
+
+        if(spawnedObject.GetComponent<PlayerMovement>())
+        {
+            ReplayManager.Instance.player = spawnedObject;
+        }
+
+        if(spawnedObject.GetComponent<Follow>())
+        {
+            
+            ReplayManager.Instance.cam = spawnedObject;
+        }
+
+        if(ReplayManager.Instance.cam && ReplayManager.Instance.player)
+        {
+            ReplayManager.Instance.cam.GetComponent<Follow>().followPos = ReplayManager.Instance.player.transform.GetChild(3);
+        }
+        
         
 
     }

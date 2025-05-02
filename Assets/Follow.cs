@@ -16,5 +16,6 @@ public class Follow : MonoBehaviour
         if(!followPos) return;
 
         transform.position = followPos.position;
+        
     }
 }

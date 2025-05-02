@@ -32,16 +32,31 @@ public class PlayerSpawner : MonoBehaviour
 
     public GameObject SpawnObject(GameObject o, string id)
     {
-        GameObject player = Instantiate(o);
-        player.GetComponent<PlayerMovement>().enabled = false;
-        player.GetComponent<PlayerLook>().enabled = false;
-        player.GetComponent<Rigidbody>().useGravity = false;
-        return player;
+        GameObject spawnedObject = Instantiate(o);
+        if(spawnedObject.GetComponent<Rigidbody>())
+        {
+            spawnedObject.GetComponent<Rigidbody>().useGravity = false;
+        }
+        return spawnedObject;
         
+    }
+
+    void DisableComponents(GameObject obj)
+    {
+        foreach (var comp in obj.GetComponents<Component>())
+        {
+
+            if (comp is Behaviour behaviour && comp is not Follow)
+            {
+                behaviour.enabled = false;
+            }
+            // Add other component types as needed
+        }
     }
 
     public void Spawn()
     {
+        ReplayManager.Instance.StartRecording();
         menuCamera.SetActive(false);
         menuCanvas.SetActive(false);
         GameObject playerPrefab = Resources.Load<GameObject>("Player");
@@ -57,7 +72,9 @@ public class PlayerSpawner : MonoBehaviour
         follow.followPos = followPos;
         look.cam = spawnedCameraHolder.transform;
         SpawnAction action = new(ReplayManager.Instance.GetReplayTime(), spawnedPlayer.name ,spawnedPlayer.GetComponent<ObjectId>().GetId());
+        SpawnAction camSpawn = new(ReplayManager.Instance.GetReplayTime(), spawnedCameraHolder.name, spawnedCameraHolder.GetComponent<ObjectId>().GetId());
         ReplayManager.Instance.actions.Add(action);
+        ReplayManager.Instance.actions.Add(camSpawn);
 
 
     }

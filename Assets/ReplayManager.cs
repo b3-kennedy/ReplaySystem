@@ -5,6 +5,8 @@ using UnityEngine;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine.Rendering;
+using TMPro;
+using UnityEngine.UI;
 
 
 
@@ -69,9 +71,18 @@ public class ReplayActionConverter : JsonConverter
 public class ReplayManager : MonoBehaviour
 {
 
+    [HideInInspector] public GameObject player = null;
+    [HideInInspector] public GameObject cam = null;
     public static ReplayManager Instance;
     public List<ReplayAction> actions = new List<ReplayAction>();
+    public Dictionary<string, Queue<ReplayAction>> tracks = new Dictionary<string, Queue<ReplayAction>>(); 
     Queue<ReplayAction> actionQueue = new Queue<ReplayAction>();
+
+    public GameObject replayPanel;
+    public GameObject replayObjectPrefab;
+
+    public GameObject replayCanvas;
+    GameObject replayTimelineBar;
 
     public Dictionary<string, GameObject> objects = new Dictionary<string, GameObject>();
 
@@ -81,6 +92,11 @@ public class ReplayManager : MonoBehaviour
     float recordStartTime;
 
     float replayTime;
+
+    float replayLength;
+
+    public GameObject freeCameraPrefab;
+    GameObject freeCam;
 
     private void Awake()
     {
@@ -97,8 +113,8 @@ public class ReplayManager : MonoBehaviour
 
     void Start()
     {
-        //StartRecording();
-        //LoadReplayFromFile(Application.persistentDataPath+"/replay_2025-05-01_16-24-35.json");
+        replayTimelineBar = replayCanvas.transform.GetChild(0).GetChild(0).gameObject;
+        
     }
 
     void Update()
@@ -117,12 +133,39 @@ public class ReplayManager : MonoBehaviour
 
         replayTime += Time.deltaTime;
 
-        if (actionQueue.Count > 0 && actionQueue.Peek().timeStamp <= replayTime)
+             
+
+        foreach (var kvp in tracks)
         {
-            
-            var action = actionQueue.Dequeue();
-            action.Process();
+            var queue = kvp.Value;
+
+            if (queue.Count > 0 && queue.Peek().timeStamp <= replayTime)
+            {
+                var action = queue.Dequeue();
+                action.Process();
+            }
         }
+
+        replayTimelineBar.transform.localScale = new Vector3(replayTime/replayLength, 1,1);
+
+        if(replayTime > replayLength)
+        {
+            replayTime = replayLength;
+        }
+
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            freeCam.SetActive(true);
+            cam.SetActive(false);
+        }
+
+        // if (actionQueue.Count > 0 && actionQueue.Peek().timeStamp <= replayTime)
+        // {
+            
+        //     var action = actionQueue.Dequeue();
+        //     Debug.Log(action.objectId);
+        //     action.Process();
+        // }
 
 
     }
@@ -164,15 +207,64 @@ public class ReplayManager : MonoBehaviour
         Debug.Log($"Replay saved to {path}");
     }
 
-    public void Load()
+    public void ShowReplayPanel()
     {
+        replayPanel.SetActive(true);
+        Transform replayParent = replayPanel.transform.GetChild(2);
+        string[] files = Directory.GetFiles(Application.persistentDataPath);
+        foreach (var file in files)
+        {
+            GameObject replayObject = Instantiate(replayObjectPrefab, replayParent);
+            TextHolder textHolder = replayObject.GetComponent<TextHolder>();
+            Button watchButton = replayObject.transform.GetChild(1).GetComponent<Button>();
+            TextMeshProUGUI replayFileName = replayObject.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
+            string[] fileName = Path.GetFileName(file).Split(".");
+            replayFileName.text = fileName[0];
+            textHolder.text = fileName[0];
+            watchButton.onClick.AddListener(delegate{Load(fileName[0]);});
+        }
+
+    }
+
+    public void Load(string path)
+    {
+        var physicsObjects = FindObjectsByType<ReplayPhysicsObject>(FindObjectsSortMode.None);
+        foreach (var o in physicsObjects)
+        {
+            Rigidbody rb = o.GetComponent<Rigidbody>();
+            if(rb)
+            {
+                rb.isKinematic = true;
+            }
+        }
+
+
         actions.Clear();
         isWatchingReplay = true;
         PlayerSpawner.Instance.menuCamera.SetActive(false);
         PlayerSpawner.Instance.menuCanvas.SetActive(false);
-        actions = LoadReplayFromFile("/replay_2025-05-01_18-46-52.json").replayActions;
+        actions = LoadReplayFromFile("/"+path+".json").replayActions;
+        
+        foreach (var action in actions)
+        {
+            if (string.IsNullOrEmpty(action.objectId)) continue;
+
+            if (!tracks.TryGetValue(action.objectId, out var queue))
+            {
+                queue = new Queue<ReplayAction>();
+                tracks[action.objectId] = queue;
+            }
+
+            queue.Enqueue(action);
+        }
+
+        replayLength = actions[actions.Count-1].timeStamp;
+
         actionQueue = new Queue<ReplayAction>(actions);
         replayTime = 0;
+        freeCam = Instantiate(freeCameraPrefab, Vector3.zero, Quaternion.identity);
+        freeCam.SetActive(false);
+        replayCanvas.SetActive(true);
         
     }
 
