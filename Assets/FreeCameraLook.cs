@@ -9,6 +9,8 @@ public class FreeCameraLook : MonoBehaviour
     float xRot;
     float yRot;
 
+    bool isCursorLocked = true;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -23,14 +25,30 @@ public class FreeCameraLook : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Rotation();
-        Move();
+        if(isCursorLocked)
+        {
+            Rotation();
+            Move();
+        }
+
+
+        if(Input.GetKeyDown(KeyCode.LeftAlt))
+        {
+            Cursor.lockState = CursorLockMode.None;
+            isCursorLocked = false;
+        }
+
+        if(Input.GetKeyUp(KeyCode.LeftAlt))
+        {
+            isCursorLocked = true;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
     }
 
     void Move()
     {
-        float horizontal = Input.GetAxis("Horizontal") * speed * Time.deltaTime;
-        float vertical = Input.GetAxis("Vertical") * speed * Time.deltaTime;
+        float horizontal = Input.GetAxisRaw("Horizontal") * speed * Time.unscaledDeltaTime;
+        float vertical = Input.GetAxisRaw("Vertical") * speed * Time.unscaledDeltaTime;
         transform.Translate(horizontal, 0,vertical);
     }
 

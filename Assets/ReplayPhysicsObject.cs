@@ -1,4 +1,5 @@
 using System;
+using System.Security.Cryptography;
 using UnityEngine;
 
 public class ReplayPhysicsObject : MonoBehaviour
@@ -13,11 +14,17 @@ public class ReplayPhysicsObject : MonoBehaviour
         
         rb = GetComponent<Rigidbody>();
         id = GetComponent<ObjectId>().GetId();
+
+        ReplayManager.Instance.objects.Add(id, gameObject);
+    }
+
+    public void OnStartReplay()
+    {
         if(ReplayManager.Instance.isWatchingReplay)
         {
             rb.isKinematic = true;
+            rb.interpolation = RigidbodyInterpolation.None;
         }
-        ReplayManager.Instance.objects.Add(id, gameObject);
     }
     void FixedUpdate()
     {

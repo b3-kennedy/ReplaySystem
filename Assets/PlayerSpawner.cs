@@ -35,7 +35,8 @@ public class PlayerSpawner : MonoBehaviour
         GameObject spawnedObject = Instantiate(o);
         if(spawnedObject.GetComponent<Rigidbody>())
         {
-            spawnedObject.GetComponent<Rigidbody>().useGravity = false;
+            spawnedObject.GetComponent<Rigidbody>().isKinematic = true;
+            spawnedObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
         }
         return spawnedObject;
         

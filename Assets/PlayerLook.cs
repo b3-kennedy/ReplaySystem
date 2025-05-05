@@ -34,7 +34,7 @@ public class PlayerLook : MonoBehaviour
         }
         else
         {
-            player = ReplayManager.Instance.player;
+            player = ReplayManager.Instance.player.transform.GetChild(0).gameObject;
         }
 
 
@@ -61,7 +61,6 @@ public class PlayerLook : MonoBehaviour
             orientation.rotation = Quaternion.Euler(0, yRot,0);
             player.transform.rotation = orientation.rotation;
             RotationAction camAction = new RotationAction(replayManagerInstance.GetReplayTime(), cam.rotation, camId);
-            //replayManagerInstance.actions.Add(action);
             replayManagerInstance.actions.Add(camAction); 
         }
         else
@@ -74,11 +73,5 @@ public class PlayerLook : MonoBehaviour
 
  
 
-    }
-
-    void LateUpdate()
-    {
-        
-     
     }
 }

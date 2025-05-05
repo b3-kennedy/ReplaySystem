@@ -7,6 +7,8 @@ using Newtonsoft.Json.Linq;
 using UnityEngine.Rendering;
 using TMPro;
 using UnityEngine.UI;
+using UnityEditor.ShaderGraph.Internal;
+using Unity.VisualScripting;
 
 
 
@@ -75,13 +77,8 @@ public class ReplayManager : MonoBehaviour
     [HideInInspector] public GameObject cam = null;
     public static ReplayManager Instance;
     public List<ReplayAction> actions = new List<ReplayAction>();
-    public Dictionary<string, Queue<ReplayAction>> tracks = new Dictionary<string, Queue<ReplayAction>>();
+    public Dictionary<string, GameObject> objects = new Dictionary<string, GameObject>();
 
-    public GameObject replayPanel;
-    public GameObject replayObjectPrefab;
-
-    public GameObject replayCanvas;
-    GameObject replayTimelineBar;
 
     bool isRecording;
 
@@ -95,9 +92,28 @@ public class ReplayManager : MonoBehaviour
     public GameObject freeCameraPrefab;
     GameObject freeCam;
 
+
+    [Header("UI")]
+    public GameObject replayPanel;
+    public GameObject replayObjectPrefab;
+
+    public GameObject replayCanvas;
+    GameObject replayTimelineBar;
+
     public Button pauseButton;
     GameObject playIcon;
     GameObject pauseIcon;
+
+    public Button increasePlaybackButton;
+    public Button decreasePlaybackButton;
+
+    public TextMeshProUGUI playbackSpeedText;
+
+
+
+    bool isPaused;
+
+    bool isFreecam;
 
     int index = 0;
 
@@ -120,7 +136,9 @@ public class ReplayManager : MonoBehaviour
         replayCanvas.SetActive(false);
 
         pauseIcon = pauseButton.transform.GetChild(0).gameObject;
-        playIcon = pauseButton.transform.GetChild(1).gameObject;        
+        playIcon = pauseButton.transform.GetChild(1).gameObject;  
+
+        playbackSpeedText.text = Time.timeScale.ToString() + "X";
     }
 
     void Update()
@@ -137,7 +155,12 @@ public class ReplayManager : MonoBehaviour
 
         if(!isWatchingReplay && actions.Count > 0) return;
 
-        replayTime += Time.deltaTime;
+        ReplayHotkeyInputs();
+
+        if(!isPaused)
+        {
+            replayTime += Time.deltaTime;
+        }
 
         
         while(index < actions.Count && actions[index].timeStamp <= replayTime)
@@ -153,21 +176,92 @@ public class ReplayManager : MonoBehaviour
             replayTime = replayLength;
         }
 
-        if(Input.GetKeyDown(KeyCode.Space))
+
+        
+
+    }
+
+    void ReplayHotkeyInputs()
+    {
+        if(Input.GetKeyDown(KeyCode.F) && !isFreecam)
         {
+            freeCam.transform.position = cam.transform.position;
+            freeCam.transform.rotation = cam.transform.rotation;
             freeCam.SetActive(true);
             cam.SetActive(false);
+            isFreecam = true;
+        }
+        else if(Input.GetKeyDown(KeyCode.F) && isFreecam)
+        {
+            freeCam.SetActive(false);
+            cam.SetActive(true);
+            isFreecam = false;
         }
 
-        // if (actionQueue.Count > 0 && actionQueue.Peek().timeStamp <= replayTime)
-        // {
-            
-        //     var action = actionQueue.Dequeue();
-        //     Debug.Log(action.objectId);
-        //     action.Process();
-        // }
+        if(Input.GetKeyDown(KeyCode.Space) && !isPaused)
+        {
+            SetPause(true);
+        }
+        else if(Input.GetKeyDown(KeyCode.Space) && isPaused)
+        {
+            SetPause(false);
+        }
 
+        if(Input.GetKeyDown(KeyCode.R))
+        {
+            replayTime = 0;
+            index = 0;
+        }
 
+        if(Input.GetKeyDown(KeyCode.LeftAlt))
+        {
+            Cursor.lockState = CursorLockMode.None;
+        }
+        else if(Input.GetKeyUp(KeyCode.LeftAlt))
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+        }
+    }
+
+    public void IncreaseTimeScale()
+    {
+        Time.timeScale *= 2;
+        if(Time.timeScale > 8)
+        {
+            Time.timeScale = 8;
+        }
+        playbackSpeedText.text = Time.timeScale.ToString() + "X";
+    }
+
+    public void DecreaseTimeScale()
+    {
+        Time.timeScale /= 2;
+        if(Time.timeScale < 0.25f)
+        {
+            Time.timeScale = 0.25f;
+        }
+        playbackSpeedText.text = Time.timeScale.ToString() + "X";
+    }
+
+    public void MoveReplayToPoint(float pct)
+    {
+        float time = replayLength * pct;
+        replayTime = time;
+        index = 0; // Reset the index since we'll reprocess actions
+
+        // Process all actions up to the current replay time to rebuild state
+        for (int i = 0; i < actions.Count; i++)
+        {
+            if (actions[i].timeStamp <= replayTime)
+            {
+                actions[i].Process();
+                index = i + 1;
+            }
+            else
+            {
+                break;
+            }
+        }
     }
 
     public void Pause()
@@ -186,13 +280,13 @@ public class ReplayManager : MonoBehaviour
     {
         if(value)
         {
-            Time.timeScale = 0.0000001f;
+            isPaused = true;
             playIcon.SetActive(true);
             pauseIcon.SetActive(false);
         }
         else
         {
-            Time.timeScale = 1;
+            isPaused = false;
             playIcon.SetActive(false);
             pauseIcon.SetActive(true);
         }
@@ -221,7 +315,7 @@ public class ReplayManager : MonoBehaviour
 
     void OnApplicationQuit()
     {
-        if(isWatchingReplay) return;
+        if(isWatchingReplay || !isRecording) return;
         SaveReplayToFile();
     }
 
@@ -230,7 +324,7 @@ public class ReplayManager : MonoBehaviour
         string json = JsonConvert.SerializeObject(new ReplayDataWrapper(actions), Formatting.Indented);
         
         string formattedDate = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        string path = Path.Combine(Application.persistentDataPath, "replay_" + formattedDate + ".json");
+        string path = Path.Combine(Application.persistentDataPath+"/Replays/", "replay_" + formattedDate + ".json");
         File.WriteAllText(path, json);
         Debug.Log($"Replay saved to {path}");
     }
@@ -239,7 +333,7 @@ public class ReplayManager : MonoBehaviour
     {
         replayPanel.SetActive(true);
         Transform replayParent = replayPanel.transform.GetChild(2);
-        string[] files = Directory.GetFiles(Application.persistentDataPath);
+        string[] files = Directory.GetFiles(Application.persistentDataPath+"/Replays/");
         foreach (var file in files)
         {
             GameObject replayObject = Instantiate(replayObjectPrefab, replayParent);
@@ -269,9 +363,18 @@ public class ReplayManager : MonoBehaviour
 
         actions.Clear();
         isWatchingReplay = true;
+        foreach (var kvp in objects)
+        {
+            var value = kvp.Value;
+            ReplayPhysicsObject rpo = value.GetComponent<ReplayPhysicsObject>();
+            if(rpo)
+            {
+                value.GetComponent<ReplayPhysicsObject>().OnStartReplay();
+            }
+        }
         PlayerSpawner.Instance.menuCamera.SetActive(false);
         PlayerSpawner.Instance.menuCanvas.SetActive(false);
-        actions = LoadReplayFromFile("/"+path+".json").replayActions;
+        actions = LoadReplayFromFile("/Replays/"+path+".json").replayActions;
 
         replayLength = actions[actions.Count-1].timeStamp;
 
@@ -279,6 +382,8 @@ public class ReplayManager : MonoBehaviour
         freeCam = Instantiate(freeCameraPrefab, Vector3.zero, Quaternion.identity);
         freeCam.SetActive(false);
         replayCanvas.SetActive(true);
+
+        Cursor.lockState = CursorLockMode.Locked;
         
     }
 

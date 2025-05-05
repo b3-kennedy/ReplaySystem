@@ -117,7 +117,7 @@ public class ClickAction: ReplayAction
 
     public override void Process()
     {
-        Debug.Log("Process Click");
+        //Debug.Log("Process Click");
     }
 }
 
@@ -125,6 +125,8 @@ public class SpawnAction: ReplayAction
 {
     public string prefabName;
     public string objectName;
+
+    GameObject spawnedObject;
 
 
     public SpawnAction(float timeStamp, string oName, string id):base(timeStamp)
@@ -136,12 +138,16 @@ public class SpawnAction: ReplayAction
 
     public override void Process()
     {
-        string[] split = objectName.Split("(");
-        prefabName = split[0];
-        GameObject o = Resources.Load<GameObject>(prefabName);
-        GameObject spawnedObject = PlayerSpawner.Instance.SpawnObject(o, objectId);
-        Debug.Log(spawnedObject.name);
-        ReplayManager.Instance.objects.Add(objectId, spawnedObject);
+        
+        if(!ReplayManager.Instance.objects.TryGetValue(objectId, out var obj))
+        {
+            string[] split = objectName.Split("(");
+            prefabName = split[0];
+            GameObject o = Resources.Load<GameObject>(prefabName);
+            spawnedObject = PlayerSpawner.Instance.SpawnObject(o, objectId);
+            ReplayManager.Instance.objects.Add(objectId, spawnedObject);
+        }
+        
 
 
 
