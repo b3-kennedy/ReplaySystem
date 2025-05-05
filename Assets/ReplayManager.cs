@@ -98,6 +98,10 @@ public class ReplayManager : MonoBehaviour
     public GameObject freeCameraPrefab;
     GameObject freeCam;
 
+    public Button pauseButton;
+    GameObject playIcon;
+    GameObject pauseIcon;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -114,7 +118,10 @@ public class ReplayManager : MonoBehaviour
     void Start()
     {
         replayTimelineBar = replayCanvas.transform.GetChild(0).GetChild(0).gameObject;
-        
+        replayCanvas.SetActive(false);
+
+        pauseIcon = pauseButton.transform.GetChild(0).gameObject;
+        playIcon = pauseButton.transform.GetChild(1).gameObject;        
     }
 
     void Update()
@@ -168,6 +175,34 @@ public class ReplayManager : MonoBehaviour
         // }
 
 
+    }
+
+    public void Pause()
+    {
+        if(pauseIcon.activeSelf)
+        {
+            SetPause(true);
+        }
+        else
+        {
+            SetPause(false);
+        }
+    }
+
+    public void SetPause(bool value)
+    {
+        if(value)
+        {
+            Time.timeScale = 0.0000001f;
+            playIcon.SetActive(true);
+            pauseIcon.SetActive(false);
+        }
+        else
+        {
+            Time.timeScale = 1;
+            playIcon.SetActive(false);
+            pauseIcon.SetActive(true);
+        }
     }
 
     public void StartRecording()
