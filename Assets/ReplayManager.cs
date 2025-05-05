@@ -75,16 +75,13 @@ public class ReplayManager : MonoBehaviour
     [HideInInspector] public GameObject cam = null;
     public static ReplayManager Instance;
     public List<ReplayAction> actions = new List<ReplayAction>();
-    public Dictionary<string, Queue<ReplayAction>> tracks = new Dictionary<string, Queue<ReplayAction>>(); 
-    Queue<ReplayAction> actionQueue = new Queue<ReplayAction>();
+    public Dictionary<string, Queue<ReplayAction>> tracks = new Dictionary<string, Queue<ReplayAction>>();
 
     public GameObject replayPanel;
     public GameObject replayObjectPrefab;
 
     public GameObject replayCanvas;
     GameObject replayTimelineBar;
-
-    public Dictionary<string, GameObject> objects = new Dictionary<string, GameObject>();
 
     bool isRecording;
 
@@ -101,6 +98,8 @@ public class ReplayManager : MonoBehaviour
     public Button pauseButton;
     GameObject playIcon;
     GameObject pauseIcon;
+
+    int index = 0;
 
     private void Awake()
     {
@@ -140,17 +139,11 @@ public class ReplayManager : MonoBehaviour
 
         replayTime += Time.deltaTime;
 
-             
-
-        foreach (var kvp in tracks)
+        
+        while(index < actions.Count && actions[index].timeStamp <= replayTime)
         {
-            var queue = kvp.Value;
-
-            if (queue.Count > 0 && queue.Peek().timeStamp <= replayTime)
-            {
-                var action = queue.Dequeue();
-                action.Process();
-            }
+            actions[index].Process();
+            index++;
         }
 
         replayTimelineBar.transform.localScale = new Vector3(replayTime/replayLength, 1,1);
@@ -279,23 +272,9 @@ public class ReplayManager : MonoBehaviour
         PlayerSpawner.Instance.menuCamera.SetActive(false);
         PlayerSpawner.Instance.menuCanvas.SetActive(false);
         actions = LoadReplayFromFile("/"+path+".json").replayActions;
-        
-        foreach (var action in actions)
-        {
-            if (string.IsNullOrEmpty(action.objectId)) continue;
-
-            if (!tracks.TryGetValue(action.objectId, out var queue))
-            {
-                queue = new Queue<ReplayAction>();
-                tracks[action.objectId] = queue;
-            }
-
-            queue.Enqueue(action);
-        }
 
         replayLength = actions[actions.Count-1].timeStamp;
 
-        actionQueue = new Queue<ReplayAction>(actions);
         replayTime = 0;
         freeCam = Instantiate(freeCameraPrefab, Vector3.zero, Quaternion.identity);
         freeCam.SetActive(false);
