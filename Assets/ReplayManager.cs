@@ -4,11 +4,9 @@ using System.IO;
 using UnityEngine;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UnityEngine.Rendering;
 using TMPro;
 using UnityEngine.UI;
-using UnityEditor.ShaderGraph.Internal;
-using Unity.VisualScripting;
+using System.Runtime.Serialization.Formatters.Binary;
 
 
 
@@ -153,7 +151,7 @@ public class ReplayManager : MonoBehaviour
         }
 
 
-        if(!isWatchingReplay && actions.Count > 0) return;
+        if(!isWatchingReplay) return;
 
         ReplayHotkeyInputs();
 
@@ -319,15 +317,7 @@ public class ReplayManager : MonoBehaviour
         SaveReplayToFile();
     }
 
-    void SaveReplayToFile()
-    {
-        string json = JsonConvert.SerializeObject(new ReplayDataWrapper(actions), Formatting.Indented);
-        
-        string formattedDate = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        string path = Path.Combine(Application.persistentDataPath+"/Replays/", "replay_" + formattedDate + ".json");
-        File.WriteAllText(path, json);
-        Debug.Log($"Replay saved to {path}");
-    }
+
 
     public void ShowReplayPanel()
     {
@@ -346,6 +336,22 @@ public class ReplayManager : MonoBehaviour
             watchButton.onClick.AddListener(delegate{Load(fileName[0]);});
         }
 
+    }
+
+    void SaveReplayToFile()
+    {
+        string formattedDate = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        string path = Path.Combine(Application.persistentDataPath + "/Replays/", "replay_" + formattedDate + ".bin");
+
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+        using (FileStream file = File.Create(path))
+        {
+            BinaryFormatter bf = new BinaryFormatter();
+            bf.Serialize(file, new ReplayDataWrapper(actions));
+        }
+
+        Debug.Log($"Binary replay saved to {path}");
     }
 
     public void Load(string path)
@@ -374,7 +380,7 @@ public class ReplayManager : MonoBehaviour
         }
         PlayerSpawner.Instance.menuCamera.SetActive(false);
         PlayerSpawner.Instance.menuCanvas.SetActive(false);
-        actions = LoadReplayFromFile("/Replays/"+path+".json").replayActions;
+        actions = LoadReplayFromFile(Application.persistentDataPath + "/Replays/"+path+".bin").replayActions;
 
         replayLength = actions[actions.Count-1].timeStamp;
 
@@ -390,20 +396,18 @@ public class ReplayManager : MonoBehaviour
 
     public ReplayDataWrapper LoadReplayFromFile(string path)
     {
-        string correctPath = Application.persistentDataPath+path;
-        if (!File.Exists(correctPath))
+
+        if (!File.Exists(path))
         {
-            Debug.LogError("Replay file not found: " + correctPath);
+            Debug.LogError("Binary replay file not found: " + path);
             return null;
         }
 
-        string json = File.ReadAllText(correctPath);
-        var settings = new JsonSerializerSettings
-        {
-            Converters = new List<JsonConverter> { new ReplayActionConverter() },
-            TypeNameHandling = TypeNameHandling.None
-        };
+        FileStream file = File.Open(path, FileMode.Open);
+        BinaryFormatter bf = new BinaryFormatter();
+        ReplayDataWrapper data = (ReplayDataWrapper)bf.Deserialize(file);
+        file.Close();
 
-        return JsonConvert.DeserializeObject<ReplayDataWrapper>(json, settings);
+        return data;
     }
 }

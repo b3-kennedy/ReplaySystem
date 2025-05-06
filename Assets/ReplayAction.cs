@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 
 
+[System.Serializable]
 public class JsonVector
 {
     public float x;
@@ -21,6 +22,7 @@ public class JsonVector
     }
 }
 
+[System.Serializable]
 public class JsonQuaternion
 {
     public float x;
@@ -86,6 +88,7 @@ public class MovementAction : ReplayAction
     }
 }
 
+[System.Serializable]
 public class RotationAction: ReplayAction
 {
     public JsonQuaternion targetRotation;
@@ -108,6 +111,7 @@ public class RotationAction: ReplayAction
     }
 }
 
+[System.Serializable]
 public class ClickAction: ReplayAction
 {
     public ClickAction(float timeStamp):base(timeStamp)
@@ -121,12 +125,14 @@ public class ClickAction: ReplayAction
     }
 }
 
+[System.Serializable]
 public class SpawnAction: ReplayAction
 {
     public string prefabName;
     public string objectName;
 
-    GameObject spawnedObject;
+
+    [NonSerialized] GameObject spawnedObject;
 
 
     public SpawnAction(float timeStamp, string oName, string id):base(timeStamp)
