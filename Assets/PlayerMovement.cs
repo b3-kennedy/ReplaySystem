@@ -238,8 +238,6 @@ public class PlayerMovement : MonoBehaviour
     private void FixedUpdate()
     {
         MovePlayer();
-        MovementAction action = new(replayInstance.GetReplayTime(), rb.position, objectId);
-        replayInstance.actions.Add(action);
 
     }
 

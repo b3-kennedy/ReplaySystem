@@ -11,6 +11,8 @@ public class ReplayPhysicsObject : MonoBehaviour
     Vector3 lastPosition;
     Quaternion lastRotation;
 
+    float lastPositionTime = 0;
+
     
     void Start()
     {
@@ -18,7 +20,11 @@ public class ReplayPhysicsObject : MonoBehaviour
         rb = GetComponent<Rigidbody>();
         id = GetComponent<ObjectId>().GetId();
 
-        ReplayManager.Instance.objects.Add(id, gameObject);
+        if (!ReplayManager.Instance.objects.TryGetValue(id, out var obj))
+        {
+            ReplayManager.Instance.objects.Add(id, gameObject);;
+        }
+        
 
         lastPosition = rb.position;
         lastRotation = rb.rotation;
@@ -41,9 +47,12 @@ public class ReplayPhysicsObject : MonoBehaviour
 
         if(currentPosition != lastPosition)
         {
-            MovementAction action = new(ReplayManager.Instance.GetReplayTime(), rb.position,id);
+            float currentTime = ReplayManager.Instance.GetReplayTime();
+            float duration = currentTime - lastPositionTime;
+            MovementAction action = new(ReplayManager.Instance.GetReplayTime(), rb.position, lastPosition, duration,id);
             ReplayManager.Instance.actions.Add(action);
             lastPosition = currentPosition;
+            lastPositionTime = currentTime;
         }
 
         if(currentRotation != lastRotation)

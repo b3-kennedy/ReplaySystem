@@ -63,28 +63,62 @@ public abstract class ReplayAction
 
     public abstract void Process();
 
+    public virtual bool IsInterpolated()
+    {
+        return false;
+    }
+
 }
 
 [System.Serializable]
 public class MovementAction : ReplayAction
 {
+    public JsonVector prevPosition;
     public JsonVector targetPosition;
 
-    public MovementAction(float timeStamp, Vector3 targetPos, string oId) : base(timeStamp)
+    public bool isInterpolated = true;
+
+    public float duration;
+
+    public float startTime;
+
+
+
+    public MovementAction(float timeStamp, Vector3 targetPos, Vector3 prevPos, float dur,string oId) : base(timeStamp)
     {
         objectId = oId;
         targetPosition = new(targetPos);
+        prevPosition = new(prevPos);
+        duration = dur;
         type = GetActionType();
+        startTime = timeStamp - dur;
     }
 
-
+    public override bool IsInterpolated()
+    {
+        return true;
+    }
 
     public override void Process()
     {
-        if(ReplayManager.Instance.objects.TryGetValue(objectId, out var o))
+        if (ReplayManager.Instance.objects.TryGetValue(objectId, out var o))
         {
-            o.transform.position = targetPosition.ToVector3();
+            float currentReplayTime = ReplayManager.Instance.GetReplayTimer();
+
+            // Only interpolate if within valid time window
+            if (currentReplayTime >= startTime && currentReplayTime <= timeStamp)
+            {
+                float t = Mathf.InverseLerp(startTime, timeStamp, currentReplayTime);
+                Vector3 pos = Vector3.Lerp(prevPosition.ToVector3(), targetPosition.ToVector3(), t);
+                o.transform.position = pos;
+            }
+            else if (currentReplayTime > timeStamp)
+            {
+                // Snap to final position after interpolation ends
+                o.transform.position = targetPosition.ToVector3();
+            }
         }
+
     }
 }
 
@@ -100,7 +134,10 @@ public class RotationAction: ReplayAction
         type = GetActionType();
     }
 
-
+    // public override bool IsInterpolated()
+    // {
+    //     return true;
+    // }
 
     public override void Process()
     {
@@ -123,6 +160,11 @@ public class ClickAction: ReplayAction
     {
         //Debug.Log("Process Click");
     }
+
+    public override bool IsInterpolated()
+    {
+        return false;
+    }
 }
 
 [System.Serializable]
@@ -140,6 +182,11 @@ public class SpawnAction: ReplayAction
         objectId = id;
         objectName = oName;
         type = GetActionType();
+    }
+
+    public override bool IsInterpolated()
+    {
+        return false;
     }
 
     public override void Process()
@@ -175,5 +222,24 @@ public class SpawnAction: ReplayAction
         
         
 
+    }
+}
+
+[System.Serializable]
+public class ScoreAction : ReplayAction
+{
+    public ScoreAction(float timeS) : base(timeS)
+    {
+        type = GetActionType();
+    }
+
+    public override bool IsInterpolated()
+    {
+        return false;
+    }
+
+    public override void Process()
+    {
+        
     }
 }

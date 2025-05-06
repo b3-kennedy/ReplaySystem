@@ -40,7 +40,7 @@ public class ReplayActionConverter : JsonConverter
         switch (type)
         {
             case "MovementAction":
-                result = new MovementAction(0, Vector3.zero, "");
+                result = new MovementAction(0, Vector3.zero, Vector3.zero ,0,"");
                 break;
             case "RotationAction":
                 result = new RotationAction(0, Quaternion.identity, "");
@@ -50,6 +50,9 @@ public class ReplayActionConverter : JsonConverter
                 break;
             case "SpawnAction":
                 result = new SpawnAction(0,"","");
+                break;
+            case "ScoreAction":
+                result = new ScoreAction(0);
                 break;
             default:
                 throw new Exception("Unknown action type: " + type);
@@ -75,6 +78,10 @@ public class ReplayManager : MonoBehaviour
     [HideInInspector] public GameObject cam = null;
     public static ReplayManager Instance;
     public List<ReplayAction> actions = new List<ReplayAction>();
+
+    List<ReplayAction> interpolatedActions = new List<ReplayAction>();
+
+    List<ReplayAction> nonInterpolatedActions = new List<ReplayAction>();
     public Dictionary<string, GameObject> objects = new Dictionary<string, GameObject>();
 
 
@@ -95,8 +102,11 @@ public class ReplayManager : MonoBehaviour
     public GameObject replayPanel;
     public GameObject replayObjectPrefab;
 
+    public GameObject scoredMarker;
+
     public GameObject replayCanvas;
     GameObject replayTimelineBar;
+    GameObject replayTimelineBackground;
 
     public Button pauseButton;
     GameObject playIcon;
@@ -131,6 +141,7 @@ public class ReplayManager : MonoBehaviour
     void Start()
     {
         replayTimelineBar = replayCanvas.transform.GetChild(0).GetChild(0).gameObject;
+        replayTimelineBackground = replayCanvas.transform.GetChild(0).gameObject;
         replayCanvas.SetActive(false);
 
         pauseIcon = pauseButton.transform.GetChild(0).gameObject;
@@ -161,10 +172,15 @@ public class ReplayManager : MonoBehaviour
         }
 
         
-        while(index < actions.Count && actions[index].timeStamp <= replayTime)
+        while (index < nonInterpolatedActions.Count && nonInterpolatedActions[index].timeStamp <= replayTime)
         {
-            actions[index].Process();
+            nonInterpolatedActions[index].Process();
             index++;
+        }
+
+        foreach (var interpolated in interpolatedActions)
+        {
+            interpolated.Process();
         }
 
         replayTimelineBar.transform.localScale = new Vector3(replayTime/replayLength, 1,1);
@@ -177,6 +193,16 @@ public class ReplayManager : MonoBehaviour
 
         
 
+    }
+
+    public int GetActionIndex()
+    {
+        return index;
+    }
+
+    public float GetReplayTimer()
+    {
+        return replayTime;
     }
 
     void ReplayHotkeyInputs()
@@ -341,7 +367,7 @@ public class ReplayManager : MonoBehaviour
     void SaveReplayToFile()
     {
         string formattedDate = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        string path = Path.Combine(Application.persistentDataPath + "/Replays/", "replay_" + formattedDate + ".bin");
+        string path = Path.Combine(Application.persistentDataPath + "/Replays/", "replay_" + formattedDate + ".rpl");
 
         Directory.CreateDirectory(Path.GetDirectoryName(path));
 
@@ -380,7 +406,19 @@ public class ReplayManager : MonoBehaviour
         }
         PlayerSpawner.Instance.menuCamera.SetActive(false);
         PlayerSpawner.Instance.menuCanvas.SetActive(false);
-        actions = LoadReplayFromFile(Application.persistentDataPath + "/Replays/"+path+".bin").replayActions;
+        actions = LoadReplayFromFile(Application.persistentDataPath + "/Replays/"+path+".rpl").replayActions;
+
+        foreach (var action in actions)
+        {
+            if(action.IsInterpolated())
+            {
+                interpolatedActions.Add(action);
+            }
+            else
+            {
+                nonInterpolatedActions.Add(action);
+            }
+        }
 
         replayLength = actions[actions.Count-1].timeStamp;
 
@@ -388,9 +426,29 @@ public class ReplayManager : MonoBehaviour
         freeCam = Instantiate(freeCameraPrefab, Vector3.zero, Quaternion.identity);
         freeCam.SetActive(false);
         replayCanvas.SetActive(true);
+        AddScoredIndicators();
+
+
 
         Cursor.lockState = CursorLockMode.Locked;
         
+    }
+
+    void AddScoredIndicators()
+    {
+        foreach (var action in actions)
+        {
+            if(action.type == "ScoreAction")
+            {
+                float pct = action.timeStamp/replayLength;
+                RectTransform rt = replayTimelineBackground.GetComponent<RectTransform>();
+                float pctPos = rt.rect.width * pct;
+                float start = replayTimelineBackground.transform.position.x - (rt.rect.width/2);
+                Vector3 pos = new Vector3(start + pctPos, rt.position.y, 0);
+                GameObject scoredIndicator = Instantiate(scoredMarker, pos, Quaternion.identity);
+                scoredIndicator.transform.SetParent(replayTimelineBackground.transform);
+            }
+        }
     }
 
 
