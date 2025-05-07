@@ -336,13 +336,26 @@ public class ReplayManager : MonoBehaviour
             GameObject replayObject = Instantiate(replayObjectPrefab, replayParent);
             TextHolder textHolder = replayObject.GetComponent<TextHolder>();
             Button watchButton = replayObject.transform.GetChild(1).GetComponent<Button>();
+            Button deleteButton = replayObject.transform.GetChild(2).GetComponent<Button>();
             TextMeshProUGUI replayFileName = replayObject.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
             string[] fileName = Path.GetFileName(file).Split(".");
             replayFileName.text = fileName[0];
             textHolder.text = fileName[0];
+            deleteButton.onClick.AddListener(delegate{DeleteFile(fileName[0]);});
             watchButton.onClick.AddListener(delegate{Load(fileName[0]);});
         }
 
+    }
+
+    void DeleteFile(string fileName)
+    {
+        string path = Application.persistentDataPath+"/Replays/" + fileName + ".rpl";
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+            Debug.Log("Deleted file: " + path);
+        }
+        ShowReplayPanel();
     }
 
     public void HideReplayPanel()
