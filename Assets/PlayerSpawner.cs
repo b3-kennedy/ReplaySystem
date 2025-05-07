@@ -1,3 +1,5 @@
+using System;
+using System.Security.Cryptography;
 using UnityEngine;
 
 public class PlayerSpawner : MonoBehaviour
@@ -37,6 +39,11 @@ public class PlayerSpawner : MonoBehaviour
         {
             spawnedObject.GetComponent<Rigidbody>().isKinematic = true;
             spawnedObject.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.None;
+            ObjectId oId = spawnedObject.GetComponent<ObjectId>();
+            if(oId)
+            {
+                oId.SetId(id);
+            }
         }
         return spawnedObject;
         
@@ -69,6 +76,9 @@ public class PlayerSpawner : MonoBehaviour
 
         PlayerLook look = spawnedPlayer.GetComponent<PlayerLook>();
         Follow follow = spawnedCameraHolder.GetComponent<Follow>();
+
+        spawnedPlayer.GetComponent<ObjectId>().SetId(Guid.NewGuid().ToString());
+        spawnedCameraHolder.GetComponent<ObjectId>().SetId(Guid.NewGuid().ToString());
         
         follow.followPos = followPos;
         look.cam = spawnedCameraHolder.transform;

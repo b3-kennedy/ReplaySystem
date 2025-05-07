@@ -127,6 +127,7 @@ public class ReplayManager : MonoBehaviour
 
     private void Awake()
     {
+       
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -138,6 +139,7 @@ public class ReplayManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+
     void Start()
     {
         replayTimelineBar = replayCanvas.transform.GetChild(0).GetChild(0).gameObject;
@@ -148,6 +150,25 @@ public class ReplayManager : MonoBehaviour
         playIcon = pauseButton.transform.GetChild(1).gameObject;  
 
         playbackSpeedText.text = Time.timeScale.ToString() + "X";
+
+         IdSceneObjects();
+        
+    }
+
+    void IdSceneObjects()
+    {
+        index = 0;
+        var physicsObjects = FindObjectsByType<ReplayPhysicsObject>(FindObjectsSortMode.InstanceID);
+        foreach (var o in physicsObjects)
+        {
+            Debug.Log(o.gameObject);
+            ObjectId oId = o.GetComponent<ObjectId>();
+            if(oId)
+            {
+                oId.SetId(index.ToString());                
+            }
+            index++;
+        }
     }
 
     void Update()
@@ -431,6 +452,8 @@ public class ReplayManager : MonoBehaviour
 
 
         Cursor.lockState = CursorLockMode.Locked;
+
+        MoveReplayToPoint(0);
         
     }
 

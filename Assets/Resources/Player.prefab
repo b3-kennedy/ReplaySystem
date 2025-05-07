@@ -415,7 +415,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb0bb959ba038434c86db592969ecf4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  id: 0
+  id: 2345809
 --- !u!114 &-2828987239892935793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -430,6 +430,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   basketballPos: {fileID: 2387777325983114227}
   chargeForceMultiplier: 10
+  basketballPrefab: {fileID: 6098470069473248508, guid: d211ad98d701f5443959be3c13995054, type: 3}
 --- !u!114 &5565826728019134219
 MonoBehaviour:
   m_ObjectHideFlags: 0

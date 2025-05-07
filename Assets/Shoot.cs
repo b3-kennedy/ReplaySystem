@@ -1,4 +1,5 @@
 
+using System;
 using System.Security.Cryptography;
 using UnityEngine;
 
@@ -14,6 +15,8 @@ public class Shoot : MonoBehaviour
 
     GameObject basketball;
 
+    public GameObject basketballPrefab;
+
     
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -27,6 +30,21 @@ public class Shoot : MonoBehaviour
     {
         if(replayManager.isWatchingReplay) return;
 
+        Hooping();
+
+        if(Input.GetKeyDown(KeyCode.B))
+        {
+            GameObject bBall = Instantiate(basketballPrefab, new Vector3(0, 5, 0), Quaternion.identity);
+
+            bBall.GetComponent<ObjectId>().SetId(Guid.NewGuid().ToString());
+            SpawnAction action = new(ReplayManager.Instance.GetReplayTime(), bBall.name, bBall.GetComponent<ObjectId>().GetId());
+            ReplayManager.Instance.actions.Add(action);
+        }
+
+    }
+
+    void Hooping()
+    {
         if(Input.GetKeyDown(KeyCode.E))
         {
             if(Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out RaycastHit hit ,100))
