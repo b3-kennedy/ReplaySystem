@@ -270,7 +270,7 @@ public class ChargeBarAction : ReplayAction
 
     public override bool IsInterpolated()
     {
-        return true;
+        return false;
     }
 
     public override void Process()
@@ -278,16 +278,7 @@ public class ChargeBarAction : ReplayAction
             float currentReplayTime = ReplayManager.Instance.GetReplayTimer();
             Shoot shootScript = ReplayManager.Instance.player.GetComponent<Shoot>();
 
-            if (currentReplayTime >= startTime && currentReplayTime <= timeStamp)
-            {
-                float t = Mathf.InverseLerp(startTime, timeStamp, currentReplayTime);
-                float pct = Mathf.Lerp(previousPct, nextPct, t);
-                shootScript.SetChargeBarPercent(pct);
-                shootScript.SetChargeForce(chargeForce);
-            }
-            else if (currentReplayTime > timeStamp)
-            {
-                shootScript.SetChargeBarPercent(nextPct);
-            }
+            shootScript.SetChargeBarPercent(nextPct);
+            shootScript.SetChargeForce(chargeForce);
     }
 }

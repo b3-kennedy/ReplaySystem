@@ -43,16 +43,8 @@ public class Shoot : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        float pct = chargeForce/maxCharge;
-        if(pct > 1)
-        {
-            chargeText.text = "x" + pct.ToString("F1");
-        }
-        else
-        {
-            chargeText.text = "";
-        }
-        Debug.Log(pct);
+        ReplayChargeBar();
+
         if(replayManager.isWatchingReplay) return;
 
         Hooping();
@@ -66,6 +58,30 @@ public class Shoot : MonoBehaviour
             ReplayManager.Instance.actions.Add(action);
         }
 
+    }
+
+    void ReplayChargeBar()
+    {
+        float pct = chargeForce/maxCharge;
+        if(pct > 1)
+        {
+            chargeText.text = "x" + pct.ToString("F1");
+            SetChargeBarPercent(1);
+        }
+        else
+        {
+            chargeText.text = "";
+        }
+        
+        if(pct != previousPercent)
+        {
+            float currentTime = ReplayManager.Instance.GetReplayTime();
+            float duration = currentTime - lastPercentTime;
+            ChargeBarAction action = new(currentTime, previousPercent, pct,duration,chargeForce);
+            ReplayManager.Instance.actions.Add(action);
+            lastPercentTime = currentTime;
+            previousPercent = pct;
+        }
     }
 
     void Hooping()
@@ -127,7 +143,6 @@ public class Shoot : MonoBehaviour
 
     public void SetChargeBarPercent(float value)
     {
-        float currentPercent = value;
 
 
         if(chargeRect)
@@ -135,15 +150,7 @@ public class Shoot : MonoBehaviour
             chargeRect.localScale = new Vector3(chargeRect.localScale.x, value, chargeRect.localScale.z);
         }
         
-        if(currentPercent != previousPercent)
-        {
-            float currentTime = ReplayManager.Instance.GetReplayTime();
-            float duration = currentTime - lastPercentTime;
-            ChargeBarAction action = new(currentTime, previousPercent, currentPercent,duration,chargeForce);
-            ReplayManager.Instance.actions.Add(action);
-            lastPercentTime = currentTime;
-            previousPercent = currentPercent;
-        }
+
         
         
     }
