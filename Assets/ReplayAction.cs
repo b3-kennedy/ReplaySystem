@@ -207,6 +207,7 @@ public class SpawnAction: ReplayAction
         if(spawnedObject.GetComponent<PlayerMovement>())
         {
             ReplayManager.Instance.player = spawnedObject;
+            Debug.Log("SetPlayer");
         }
 
         if(spawnedObject.GetComponent<Follow>())
@@ -228,9 +229,11 @@ public class SpawnAction: ReplayAction
 [System.Serializable]
 public class ScoreAction : ReplayAction
 {
+
     public ScoreAction(float timeS) : base(timeS)
     {
         type = GetActionType();
+
     }
 
     public override bool IsInterpolated()
@@ -241,5 +244,50 @@ public class ScoreAction : ReplayAction
     public override void Process()
     {
         
+    }
+}
+
+[System.Serializable]
+public class ChargeBarAction : ReplayAction
+{
+    public float previousPct;
+    public float nextPct;
+
+    public float chargeForce;
+
+    public float duration;
+
+    float startTime;
+    public ChargeBarAction(float timeS, float previousPercent, float nextPercent, float dur, float cForce) : base(timeS)
+    {
+        type = GetActionType();
+        previousPct = previousPercent;
+        nextPct = nextPercent;
+        duration = dur;
+        startTime = timeStamp - dur;
+        chargeForce = cForce;
+    }
+
+    public override bool IsInterpolated()
+    {
+        return true;
+    }
+
+    public override void Process()
+    {
+            float currentReplayTime = ReplayManager.Instance.GetReplayTimer();
+            Shoot shootScript = ReplayManager.Instance.player.GetComponent<Shoot>();
+
+            if (currentReplayTime >= startTime && currentReplayTime <= timeStamp)
+            {
+                float t = Mathf.InverseLerp(startTime, timeStamp, currentReplayTime);
+                float pct = Mathf.Lerp(previousPct, nextPct, t);
+                shootScript.SetChargeBarPercent(pct);
+                shootScript.SetChargeForce(chargeForce);
+            }
+            else if (currentReplayTime > timeStamp)
+            {
+                shootScript.SetChargeBarPercent(nextPct);
+            }
     }
 }

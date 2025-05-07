@@ -49,7 +49,7 @@ public class ReplayPhysicsObject : MonoBehaviour
         {
             float currentTime = ReplayManager.Instance.GetReplayTime();
             float duration = currentTime - lastPositionTime;
-            MovementAction action = new(ReplayManager.Instance.GetReplayTime(), rb.position, lastPosition, duration,id);
+            MovementAction action = new(currentTime, rb.position, lastPosition, duration,id);
             ReplayManager.Instance.actions.Add(action);
             lastPosition = currentPosition;
             lastPositionTime = currentTime;

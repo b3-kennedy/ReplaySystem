@@ -22,59 +22,11 @@ public class ReplayDataWrapper
     }
 }
 
-public class ReplayActionConverter : JsonConverter
-{
-    public override bool CanConvert(Type objectType)
-    {
-        return objectType == typeof(ReplayAction);
-    }
-
-    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-    {
-        // Load the JSON object
-        JObject jo = JObject.Load(reader);
-        string type = jo["type"]?.ToString();
-
-        ReplayAction result;
-
-        switch (type)
-        {
-            case "MovementAction":
-                result = new MovementAction(0, Vector3.zero, Vector3.zero ,0,"");
-                break;
-            case "RotationAction":
-                result = new RotationAction(0, Quaternion.identity, "");
-                break;
-            case "ClickAction":
-                result = new ClickAction(0);
-                break;
-            case "SpawnAction":
-                result = new SpawnAction(0,"","");
-                break;
-            case "ScoreAction":
-                result = new ScoreAction(0);
-                break;
-            default:
-                throw new Exception("Unknown action type: " + type);
-        }
-
-        // Populate the object with data from JSON
-        serializer.Populate(jo.CreateReader(), result);
-
-        return result;
-    }
-
-    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-    {
-        JObject jo = JObject.FromObject(value, serializer);
-        jo.WriteTo(writer);
-    }
-}
 
 public class ReplayManager : MonoBehaviour
 {
 
-    [HideInInspector] public GameObject player = null;
+    public GameObject player = null;
     [HideInInspector] public GameObject cam = null;
     public static ReplayManager Instance;
     public List<ReplayAction> actions = new List<ReplayAction>();
@@ -232,6 +184,7 @@ public class ReplayManager : MonoBehaviour
         {
             freeCam.transform.position = cam.transform.position;
             freeCam.transform.rotation = cam.transform.rotation;
+            player.GetComponent<Shoot>().playerCanvas.SetActive(false);
             freeCam.SetActive(true);
             cam.SetActive(false);
             isFreecam = true;
@@ -240,6 +193,7 @@ public class ReplayManager : MonoBehaviour
         {
             freeCam.SetActive(false);
             cam.SetActive(true);
+            player.GetComponent<Shoot>().playerCanvas.SetActive(true);
             isFreecam = false;
         }
 
@@ -368,9 +322,15 @@ public class ReplayManager : MonoBehaviour
 
     public void ShowReplayPanel()
     {
+
         replayPanel.SetActive(true);
         Transform replayParent = replayPanel.transform.GetChild(2);
+        for (int i = 0; i < replayParent.childCount; i++)
+        {
+            Destroy(replayParent.GetChild(i).gameObject);
+        }
         string[] files = Directory.GetFiles(Application.persistentDataPath+"/Replays/");
+        Array.Reverse(files);
         foreach (var file in files)
         {
             GameObject replayObject = Instantiate(replayObjectPrefab, replayParent);
@@ -383,6 +343,11 @@ public class ReplayManager : MonoBehaviour
             watchButton.onClick.AddListener(delegate{Load(fileName[0]);});
         }
 
+    }
+
+    public void HideReplayPanel()
+    {
+        replayPanel.SetActive(false);
     }
 
     void SaveReplayToFile()

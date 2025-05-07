@@ -79,6 +79,8 @@ public class PlayerSpawner : MonoBehaviour
 
         spawnedPlayer.GetComponent<ObjectId>().SetId(Guid.NewGuid().ToString());
         spawnedCameraHolder.GetComponent<ObjectId>().SetId(Guid.NewGuid().ToString());
+
+        ReplayManager.Instance.player = spawnedPlayer;
         
         follow.followPos = followPos;
         look.cam = spawnedCameraHolder.transform;

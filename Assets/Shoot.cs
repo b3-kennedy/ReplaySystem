@@ -1,6 +1,7 @@
 
 using System;
 using System.Security.Cryptography;
+using TMPro;
 using UnityEngine;
 
 public class Shoot : MonoBehaviour
@@ -17,17 +18,41 @@ public class Shoot : MonoBehaviour
 
     public GameObject basketballPrefab;
 
+    public GameObject playerCanvas;
+
+    public GameObject chargeBar;
+    RectTransform chargeRect;
+
+    public float maxCharge = 100;
+    public TextMeshProUGUI chargeText;
+
+    float previousPercent;
+
+    float lastPercentTime = 0;
+
     
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         replayManager = ReplayManager.Instance;
+        chargeRect = chargeBar.GetComponent<RectTransform>();
+        chargeRect.localScale = new Vector3(chargeRect.localScale.x, 0, chargeRect.localScale.z);
     }
 
     // Update is called once per frame
     void Update()
     {
+        float pct = chargeForce/maxCharge;
+        if(pct > 1)
+        {
+            chargeText.text = "x" + pct.ToString("F1");
+        }
+        else
+        {
+            chargeText.text = "";
+        }
+        Debug.Log(pct);
         if(replayManager.isWatchingReplay) return;
 
         Hooping();
@@ -71,6 +96,18 @@ public class Shoot : MonoBehaviour
             if(Input.GetButton("Fire1"))
             {
                 chargeForce += Time.deltaTime * chargeForceMultiplier;
+                float pct = chargeForce/maxCharge;
+                if(pct > 1)
+                {
+                    SetChargeBarPercent(1);
+                    
+                }
+                else
+                {
+                    SetChargeBarPercent(pct);
+                }
+                
+                
             }
             else if(Input.GetButtonUp("Fire1"))
             {
@@ -81,7 +118,38 @@ public class Shoot : MonoBehaviour
                 rb.isKinematic = false;
                 rb.AddForce(Camera.main.transform.forward * chargeForce, ForceMode.Impulse);
                 chargeForce = 0;
+                chargeText.text = "";
+                SetChargeBarPercent(0);
+                
             }
         }
+    }
+
+    public void SetChargeBarPercent(float value)
+    {
+        float currentPercent = value;
+
+
+        if(chargeRect)
+        {
+            chargeRect.localScale = new Vector3(chargeRect.localScale.x, value, chargeRect.localScale.z);
+        }
+        
+        if(currentPercent != previousPercent)
+        {
+            float currentTime = ReplayManager.Instance.GetReplayTime();
+            float duration = currentTime - lastPercentTime;
+            ChargeBarAction action = new(currentTime, previousPercent, currentPercent,duration,chargeForce);
+            ReplayManager.Instance.actions.Add(action);
+            lastPercentTime = currentTime;
+            previousPercent = currentPercent;
+        }
+        
+        
+    }
+
+    public void SetChargeForce(float value)
+    {
+        chargeForce = value;
     }
 }
