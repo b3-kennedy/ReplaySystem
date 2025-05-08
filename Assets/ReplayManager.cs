@@ -249,9 +249,8 @@ public class ReplayManager : MonoBehaviour
     {
         float time = replayLength * pct;
         replayTime = time;
-        index = 0; // Reset the index since we'll reprocess actions
+        index = 0;
 
-        // Process all actions up to the current replay time to rebuild state
         for (int i = 0; i < actions.Count; i++)
         {
             if (actions[i].timeStamp <= replayTime)

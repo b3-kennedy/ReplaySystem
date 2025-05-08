@@ -151,7 +151,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb0bb959ba038434c86db592969ecf4d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  id: 6
+  id: 
 --- !u!114 &4383542968816851328
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -176,3 +176,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 611df4b085fb25c4cbec0c1cc1fc5f57, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  bounceSound: {fileID: 8300000, guid: 3115ea367c73fcb4c829f909c0d57031, type: 3}

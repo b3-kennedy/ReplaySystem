@@ -212,7 +212,6 @@ public class SpawnAction: ReplayAction
         if(spawnedObject.GetComponent<PlayerMovement>())
         {
             ReplayManager.Instance.player = spawnedObject;
-            Debug.Log("SetPlayer");
         }
 
         if(spawnedObject.GetComponent<Follow>())
@@ -285,5 +284,37 @@ public class ChargeBarAction : ReplayAction
 
             shootScript.SetChargeBarPercent(nextPct);
             shootScript.SetChargeForce(chargeForce);
+    }
+}
+
+[System.Serializable]
+public class AudioAction : ReplayAction
+{
+
+    public int clipIndex;
+
+    public float pitch;
+
+    public float volume;
+
+    public JsonVector position;
+    public AudioAction(float timeS, int index, float vol, float p, Vector3 pos) : base(timeS)
+    {
+        type = GetActionType();
+        clipIndex = index;
+        pitch = p;
+        volume = vol;
+        position = new(pos);
+    }
+
+    public override bool IsInterpolated()
+    {
+        return false;
+    }
+
+    public override void Process()
+    {
+        AudioClip clip = AudioManager.Instance.audioClips[clipIndex];
+        AudioManager.Instance.PlayClipAtPoint(clip, position.ToVector3(), volume, pitch);
     }
 }

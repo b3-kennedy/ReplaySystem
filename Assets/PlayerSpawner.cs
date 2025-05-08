@@ -43,8 +43,9 @@ public class PlayerSpawner : MonoBehaviour
             if(oId)
             {
                 oId.SetId(id);
+                spawnedObject.GetComponent<ReplayPhysicsObject>().GetId();
             }
-            spawnedObject.GetComponent<ReplayPhysicsObject>().GetId();
+            
         }
         return spawnedObject;
         
