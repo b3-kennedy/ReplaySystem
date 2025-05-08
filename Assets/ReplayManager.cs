@@ -69,6 +69,8 @@ public class ReplayManager : MonoBehaviour
 
     public TextMeshProUGUI playbackSpeedText;
 
+    ReplayPhysicsObject[] rpObjects;
+
 
 
     bool isPaused;
@@ -109,17 +111,18 @@ public class ReplayManager : MonoBehaviour
 
     void IdSceneObjects()
     {
-        index = 0;
-        var physicsObjects = FindObjectsByType<ReplayPhysicsObject>(FindObjectsSortMode.InstanceID);
-        foreach (var o in physicsObjects)
+        rpObjects = FindObjectsByType<ReplayPhysicsObject>(FindObjectsSortMode.None);
+        foreach (var o in rpObjects)
         {
-            Debug.Log(o.gameObject);
             ObjectId oId = o.GetComponent<ObjectId>();
+            o.GetComponent<Rigidbody>().isKinematic = true;
             if(oId)
             {
-                oId.SetId(index.ToString());                
+                oId.SetId(o.gameObject.name + o.transform.position.ToString());
+                Debug.Log("id " + oId.id);
+
             }
-            index++;
+            o.GetId();
         }
     }
 
@@ -293,6 +296,11 @@ public class ReplayManager : MonoBehaviour
 
     public void StartRecording()
     {
+
+        foreach (var o in rpObjects)
+        {
+            o.GetComponent<Rigidbody>().isKinematic = false;
+        }
         recordStartTime = Time.time;
         isRecording = true;
         actions.Clear();
@@ -322,7 +330,7 @@ public class ReplayManager : MonoBehaviour
 
     public void ShowReplayPanel()
     {
-
+        objects.Clear();
         replayPanel.SetActive(true);
         Transform replayParent = replayPanel.transform.GetChild(2);
         for (int i = 0; i < replayParent.childCount; i++)
@@ -381,19 +389,22 @@ public class ReplayManager : MonoBehaviour
 
     public void Load(string path)
     {
-        var physicsObjects = FindObjectsByType<ReplayPhysicsObject>(FindObjectsSortMode.None);
-        foreach (var o in physicsObjects)
+        
+        foreach (var o in rpObjects)
         {
+            Debug.Log(o.gameObject.name);
             Rigidbody rb = o.GetComponent<Rigidbody>();
             if(rb)
             {
                 rb.isKinematic = true;
             }
+            o.GetComponent<ReplayPhysicsObject>().OnStartReplay();
         }
 
 
         actions.Clear();
         isWatchingReplay = true;
+        
         foreach (var kvp in objects)
         {
             var value = kvp.Value;

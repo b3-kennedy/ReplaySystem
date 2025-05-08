@@ -52,9 +52,10 @@ public class Shoot : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.B))
         {
             GameObject bBall = Instantiate(basketballPrefab, new Vector3(0, 5, 0), Quaternion.identity);
-
+            
             bBall.GetComponent<ObjectId>().SetId(Guid.NewGuid().ToString());
             SpawnAction action = new(ReplayManager.Instance.GetReplayTime(), bBall.name, bBall.GetComponent<ObjectId>().GetId());
+            bBall.GetComponent<ReplayPhysicsObject>().GetId();
             ReplayManager.Instance.actions.Add(action);
         }
 
@@ -92,7 +93,9 @@ public class Shoot : MonoBehaviour
             {
                 if(hit.collider.CompareTag("basketball"))
                 {
+                    
                     basketball = hit.collider.gameObject;
+                    Debug.Log(basketball.GetComponent<ObjectId>().id);
                     hit.collider.enabled = false;
                     Rigidbody rb = basketball.GetComponent<Rigidbody>();
                     rb.interpolation = RigidbodyInterpolation.None;

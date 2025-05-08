@@ -8,7 +8,7 @@ public class ObjectId : MonoBehaviour
     public string id;
     // void Awake()
     // {
-    //     id = Guid.NewGuid().ToString();
+    //     id = null;
     // }
 
     public string GetId()
@@ -18,11 +18,15 @@ public class ObjectId : MonoBehaviour
 
     public void SetId(string value)
     {
-        id = value;
+        if(!HasId())
+        {
+            id = value;
+        }
+        
     }
 
     public bool HasId()
     {
-        return string.IsNullOrEmpty(id);
+        return !string.IsNullOrEmpty(id);
     }
 }

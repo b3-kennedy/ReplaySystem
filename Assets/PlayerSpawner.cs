@@ -44,6 +44,7 @@ public class PlayerSpawner : MonoBehaviour
             {
                 oId.SetId(id);
             }
+            spawnedObject.GetComponent<ReplayPhysicsObject>().GetId();
         }
         return spawnedObject;
         
@@ -69,6 +70,7 @@ public class PlayerSpawner : MonoBehaviour
         menuCanvas.SetActive(false);
         GameObject playerPrefab = Resources.Load<GameObject>("Player");
         GameObject spawnedPlayer = Instantiate(playerPrefab);
+       
         Transform followPos = spawnedPlayer.transform.GetChild(3);
         GameObject spawnedCameraHolder = Instantiate(cameraHolder);
         ReplayManager.Instance.isWatchingReplay = false;
@@ -79,6 +81,8 @@ public class PlayerSpawner : MonoBehaviour
 
         spawnedPlayer.GetComponent<ObjectId>().SetId(Guid.NewGuid().ToString());
         spawnedCameraHolder.GetComponent<ObjectId>().SetId(Guid.NewGuid().ToString());
+
+         spawnedPlayer.GetComponent<ReplayPhysicsObject>().GetId();
 
         ReplayManager.Instance.player = spawnedPlayer;
         

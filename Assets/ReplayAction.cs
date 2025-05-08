@@ -105,6 +105,11 @@ public class MovementAction : ReplayAction
         {
             float currentReplayTime = ReplayManager.Instance.GetReplayTimer();
 
+            if (currentReplayTime < startTime)
+            {
+                return;
+            }
+
             // Only interpolate if within valid time window
             if (currentReplayTime >= startTime && currentReplayTime <= timeStamp)
             {

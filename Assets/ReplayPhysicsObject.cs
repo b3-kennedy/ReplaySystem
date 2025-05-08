@@ -1,5 +1,6 @@
 using System;
 using System.Security.Cryptography;
+using UnityEditor.SearchService;
 using UnityEngine;
 
 public class ReplayPhysicsObject : MonoBehaviour
@@ -18,20 +19,28 @@ public class ReplayPhysicsObject : MonoBehaviour
     {
         
         rb = GetComponent<Rigidbody>();
-        id = GetComponent<ObjectId>().GetId();
 
-        if (!ReplayManager.Instance.objects.TryGetValue(id, out var obj))
-        {
-            ReplayManager.Instance.objects.Add(id, gameObject);;
-        }
+
         
 
         lastPosition = rb.position;
         lastRotation = rb.rotation;
     }
 
+    public void GetId()
+    {
+        id = GetComponent<ObjectId>().GetId();
+    }
+
     public void OnStartReplay()
     {
+
+        
+        if (!ReplayManager.Instance.objects.TryGetValue(id, out var obj))
+        {
+            Debug.Log($"Added {gameObject.name} with id {id} to dictionary");
+            ReplayManager.Instance.objects.Add(id, gameObject);
+        }
         if(ReplayManager.Instance.isWatchingReplay)
         {
             rb.isKinematic = true;
@@ -40,7 +49,7 @@ public class ReplayPhysicsObject : MonoBehaviour
     }
     void FixedUpdate()
     {
-        if(ReplayManager.Instance.isWatchingReplay) return;
+        if(ReplayManager.Instance.isWatchingReplay || string.IsNullOrEmpty(id)) return;
 
         Vector3 currentPosition = rb.position;
         Quaternion currentRotation = rb.rotation;
