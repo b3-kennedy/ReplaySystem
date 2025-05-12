@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using TMPro;
 using UnityEngine.UI;
 using System.Runtime.Serialization.Formatters.Binary;
+using UnityEngine.SceneManagement;
 
 
 
@@ -89,8 +90,6 @@ public class ReplayManager : MonoBehaviour
         }
 
         Instance = this;
-
-        DontDestroyOnLoad(gameObject);
     }
 
 
@@ -382,7 +381,7 @@ public class ReplayManager : MonoBehaviour
         replayPanel.SetActive(false);
     }
 
-    void SaveReplayToFile()
+    public void SaveReplayToFile()
     {
         int maxActionsPerFile = 50000;
 
@@ -390,7 +389,7 @@ public class ReplayManager : MonoBehaviour
 
         int fileCount = Mathf.CeilToInt((float)totalActions / maxActionsPerFile);
 
-        string[] replayFiles = Directory.GetFiles(Application.persistentDataPath + "/Replays/");
+        string[] replayFiles = Directory.GetDirectories(Application.persistentDataPath + "/Replays/");
         int replayCount = replayFiles.Length;
 
         for (int i = 0; i < fileCount; i++)
