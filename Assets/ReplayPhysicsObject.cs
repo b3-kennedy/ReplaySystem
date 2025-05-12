@@ -11,6 +11,7 @@ public class ReplayPhysicsObject : MonoBehaviour
     Quaternion lastRotation;
 
     float lastPositionTime = 0;
+    float lastRotationTime = 0;
 
     
     void Start()
@@ -64,9 +65,12 @@ public class ReplayPhysicsObject : MonoBehaviour
 
         if(currentRotation != lastRotation)
         {
-            RotationAction rotAction = new(ReplayManager.Instance.GetReplayTime(), rb.rotation, id);
+            float currentTime = ReplayManager.Instance.GetReplayTime();
+            float duration = currentTime - lastRotationTime;
+            RotationAction rotAction = new(ReplayManager.Instance.GetReplayTime(), rb.rotation, lastRotation,duration,id);
             ReplayManager.Instance.actions.Add(rotAction);
             lastRotation = currentRotation;
+            lastRotationTime = currentTime;
         }
 
         

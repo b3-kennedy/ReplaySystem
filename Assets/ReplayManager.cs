@@ -251,18 +251,29 @@ public class ReplayManager : MonoBehaviour
         replayTime = time;
         index = 0;
 
-        for (int i = 0; i < actions.Count; i++)
+        while (index < nonInterpolatedActions.Count && nonInterpolatedActions[index].timeStamp <= replayTime)
         {
-            if (actions[i].timeStamp <= replayTime)
-            {
-                actions[i].Process();
-                index = i + 1;
-            }
-            else
-            {
-                break;
-            }
+            nonInterpolatedActions[index].Process();
+            index++;
         }
+
+        foreach (var interpolated in interpolatedActions)
+        {
+            interpolated.Process();
+        }
+
+        // for (int i = 0; i < actions.Count; i++)
+        // {
+        //     if (actions[i].timeStamp <= replayTime)
+        //     {
+        //         actions[i].Process();
+        //         index = i + 1;
+        //     }
+        //     else
+        //     {
+        //         break;
+        //     }
+        // }
     }
 
     public void Pause()
@@ -336,10 +347,11 @@ public class ReplayManager : MonoBehaviour
         {
             Destroy(replayParent.GetChild(i).gameObject);
         }
-        string[] files = Directory.GetFiles(Application.persistentDataPath+"/Replays/");
+        string[] files = Directory.GetDirectories(Application.persistentDataPath+"/Replays/");
         Array.Reverse(files);
         foreach (var file in files)
         {
+
             GameObject replayObject = Instantiate(replayObjectPrefab, replayParent);
             TextHolder textHolder = replayObject.GetComponent<TextHolder>();
             Button watchButton = replayObject.transform.GetChild(1).GetComponent<Button>();
@@ -348,19 +360,19 @@ public class ReplayManager : MonoBehaviour
             string[] fileName = Path.GetFileName(file).Split(".");
             replayFileName.text = fileName[0];
             textHolder.text = fileName[0];
-            deleteButton.onClick.AddListener(delegate{DeleteFile(fileName[0]);});
-            watchButton.onClick.AddListener(delegate{Load(fileName[0]);});
+            deleteButton.onClick.AddListener(delegate{DeleteFile(file);});
+            watchButton.onClick.AddListener(delegate{Load(file);});
         }
 
     }
 
     void DeleteFile(string fileName)
     {
-        string path = Application.persistentDataPath+"/Replays/" + fileName + ".rpl";
-        if (File.Exists(path))
+        //string path = Application.persistentDataPath+"/Replays/" + fileName + ".rpl";
+        if (Directory.Exists(fileName))
         {
-            File.Delete(path);
-            Debug.Log("Deleted file: " + path);
+            Directory.Delete(fileName, true);
+            Debug.Log("Deleted file: " + fileName);
         }
         ShowReplayPanel();
     }
@@ -372,23 +384,42 @@ public class ReplayManager : MonoBehaviour
 
     void SaveReplayToFile()
     {
-        string formattedDate = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        string path = Path.Combine(Application.persistentDataPath + "/Replays/", "replay_" + formattedDate + ".rpl");
+        int maxActionsPerFile = 50000;
 
-        Directory.CreateDirectory(Path.GetDirectoryName(path));
+        int totalActions = actions.Count;
 
-        using (FileStream file = File.Create(path))
+        int fileCount = Mathf.CeilToInt((float)totalActions / maxActionsPerFile);
+
+        string[] replayFiles = Directory.GetFiles(Application.persistentDataPath + "/Replays/");
+        int replayCount = replayFiles.Length;
+
+        for (int i = 0; i < fileCount; i++)
         {
-            BinaryFormatter bf = new BinaryFormatter();
-            bf.Serialize(file, new ReplayDataWrapper(actions));
-        }
+            List<ReplayAction> actionChunk = actions.GetRange(i * maxActionsPerFile, Mathf.Min(maxActionsPerFile, totalActions - (i * maxActionsPerFile)));
 
-        Debug.Log($"Binary replay saved to {path}");
+            string formattedDate = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string path = Path.Combine(Application.persistentDataPath + "/Replays/Replay"+replayCount+"/", $"replay_{formattedDate}_{i + 1}.rpl");
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+            using (FileStream file = File.Create(path))
+            {
+                BinaryFormatter bf = new BinaryFormatter();
+                bf.Serialize(file, new ReplayDataWrapper(actionChunk));
+            }
+
+            Debug.Log($"Binary replay chunk saved to {path}");
+        }
     }
 
     public void Load(string path)
     {
-        
+
+        if(!Directory.Exists(path)) return;
+
+        string[] files = Directory.GetFiles(path);
+
+        Debug.Log(files[0]);
+
         foreach (var o in rpObjects)
         {
             Debug.Log(o.gameObject.name);
@@ -415,7 +446,15 @@ public class ReplayManager : MonoBehaviour
         }
         PlayerSpawner.Instance.menuCamera.SetActive(false);
         PlayerSpawner.Instance.menuCanvas.SetActive(false);
-        actions = LoadReplayFromFile(Application.persistentDataPath + "/Replays/"+path+".rpl").replayActions;
+        foreach (var file in files)
+        {
+            var loadedActions = LoadReplayFromFile(file).replayActions;
+            foreach (var a in loadedActions)
+            {
+                actions.Add(a);
+            }
+        }
+        
 
         foreach (var action in actions)
         {

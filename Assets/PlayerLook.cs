@@ -17,6 +17,10 @@ public class PlayerLook : MonoBehaviour
     string objectId;
     string camId;
 
+    Quaternion lastRotation;
+
+    float lastRotationTime = 0;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -60,8 +64,18 @@ public class PlayerLook : MonoBehaviour
             
             orientation.rotation = Quaternion.Euler(0, yRot,0);
             player.transform.rotation = orientation.rotation;
-            RotationAction camAction = new RotationAction(replayManagerInstance.GetReplayTime(), cam.rotation, camId);
-            replayManagerInstance.actions.Add(camAction); 
+
+            Quaternion currentRotation = cam.rotation;
+            if(currentRotation != lastRotation)
+            {
+                float currentTime = ReplayManager.Instance.GetReplayTime();
+                float duration = currentTime - lastRotationTime;
+                RotationAction camAction = new RotationAction(replayManagerInstance.GetReplayTime(), cam.rotation, lastRotation, duration, camId);
+                replayManagerInstance.actions.Add(camAction);
+                lastRotation = currentRotation;
+                lastRotationTime = currentTime;
+            }
+
         }
         else
         {

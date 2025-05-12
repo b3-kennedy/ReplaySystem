@@ -131,24 +131,48 @@ public class MovementAction : ReplayAction
 public class RotationAction: ReplayAction
 {
     public JsonQuaternion targetRotation;
+    public JsonQuaternion previousRotation;
 
-    public RotationAction(float timeStamp, Quaternion targetRot, string oId) : base(timeStamp)
+    public float duration;
+
+    public float startTime;
+    public RotationAction(float timeStamp, Quaternion targetRot, Quaternion prevRot,float dur,string oId) : base(timeStamp)
     {
         objectId = oId;
         targetRotation = new(targetRot);
+        previousRotation = new(prevRot);
+        duration = dur;
+        startTime = timeStamp - dur;
         type = GetActionType();
     }
 
-    // public override bool IsInterpolated()
-    // {
-    //     return true;
-    // }
+    public override bool IsInterpolated()
+    {
+        return false;
+    }
 
     public override void Process()
     {
         if(ReplayManager.Instance.objects.TryGetValue(objectId, out var o))
         {
-            o.transform.rotation = targetRotation.ToQuaternion();
+            float currentReplayTime = ReplayManager.Instance.GetReplayTime();
+
+            if (currentReplayTime < startTime)
+            {
+                return;
+            }
+
+            if (currentReplayTime >= startTime && currentReplayTime <= timeStamp)
+            {
+                float t = Mathf.InverseLerp(startTime, timeStamp, currentReplayTime);
+                Quaternion rot = Quaternion.Slerp(previousRotation.ToQuaternion(), targetRotation.ToQuaternion(), t);
+                o.transform.rotation = rot;
+            }
+            else if (currentReplayTime > timeStamp)
+            {
+                // Snap to final position after interpolation ends
+                o.transform.rotation = targetRotation.ToQuaternion();
+            }
         }
     }
 }
