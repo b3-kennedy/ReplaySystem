@@ -70,6 +70,8 @@ public class ReplayManager : MonoBehaviour
 
     public TextMeshProUGUI playbackSpeedText;
 
+    public TextMeshProUGUI replayTimeText;
+
     ReplayPhysicsObject[] rpObjects;
 
 
@@ -163,6 +165,11 @@ public class ReplayManager : MonoBehaviour
         if(replayTime > replayLength)
         {
             replayTime = replayLength;
+        }
+
+        if(replayTime < 0)
+        {
+            replayTime = 0;
         }
 
 
@@ -260,19 +267,20 @@ public class ReplayManager : MonoBehaviour
         {
             interpolated.Process();
         }
+    }
 
-        // for (int i = 0; i < actions.Count; i++)
-        // {
-        //     if (actions[i].timeStamp <= replayTime)
-        //     {
-        //         actions[i].Process();
-        //         index = i + 1;
-        //     }
-        //     else
-        //     {
-        //         break;
-        //     }
-        // }
+    public void AddTenPercent()
+    {
+        float value = replayLength * 0.1f;
+        float pct = (replayTime + value)/replayLength;
+        MoveReplayToPoint(pct);
+    }
+
+    public void BackTenPercent()
+    {
+        float value = replayLength * 0.1f;
+        float pct = (replayTime - value)/replayLength;
+        MoveReplayToPoint(pct);
     }
 
     public void Pause()
@@ -472,6 +480,10 @@ public class ReplayManager : MonoBehaviour
         replayTime = 0;
         freeCam = Instantiate(freeCameraPrefab, Vector3.zero, Quaternion.identity);
         freeCam.SetActive(false);
+        float totalSeconds = actions[actions.Count-1].timeStamp;
+        int minutes = Mathf.FloorToInt(totalSeconds / 60);
+        int seconds = Mathf.FloorToInt(totalSeconds % 60);
+        replayTimeText.text = string.Format("{0}:{1:D2}", minutes, seconds);
         replayCanvas.SetActive(true);
         AddScoredIndicators();
 
@@ -516,5 +528,10 @@ public class ReplayManager : MonoBehaviour
         file.Close();
 
         return data;
+    }
+
+    public void Quit()
+    {
+        Application.Quit();
     }
 }
